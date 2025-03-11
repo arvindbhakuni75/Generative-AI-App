@@ -27,7 +27,7 @@ const Home = () => {
   const generateText = async (prompt: string) => {
     try {
       const genAI = new GoogleGenerativeAI(
-        "AIzaSyAU9RGUPy5eUFuANbv0fObBveZprBcYjQY"
+        "AI_KEY"
       );
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
