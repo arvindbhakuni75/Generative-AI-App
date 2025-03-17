@@ -31,8 +31,6 @@ const Home = () => {
     }
   };
 
-  console.log("chat", chat);
-
   const generateText = async (prompt: string) => {
     try {
       const genAI = new GoogleGenerativeAI(
