@@ -1,15 +1,28 @@
-import React, { useRef, useState, useEffect } from "react";
+"use client";
+
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useChat } from "@/context/ChatContext";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGfm from "remark-gfm";
+import Navbar from "./Navbar";
+import Canvas, { ConversationTypes } from "./Canvas";
+import QueryField from "./QueryField";
 
 const Home = () => {
-  
-  const { chat, setChat, currentIndex, setCurrentIndex, conversations, setConversations }: any = useChat();
+  const {
+    chat,
+    setChat,
+    input,
+    setInput,
+    currentIndex,
+    conversations,
+    setConversations,
+  }: any = useChat();
 
-  const [input, setInput] = useState("");
-  // const [conversations, setConversations] = useState<any>(chat[currentIndex] || []);
   const [loading, setLoading] = useState(false);
-
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -22,48 +35,58 @@ const Home = () => {
     }
   };
 
-  console.log("currentIndex", currentIndex);
+  console.log("chat", chat);
 
   const generateText = async (prompt: string) => {
     try {
       const genAI = new GoogleGenerativeAI(
-        "AIzaSyAU9RGUPy5eUFuANbv0fObBveZprBcYjQY"
+        process.env.NEXT_PUBLIC_AI_API_KEY as string
       );
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       const result = await model.generateContent(prompt);
-      // console.log(result.response.text());
       const newConversation = result.response.text();
-      // setConversations([...conversations, {role: "AI", content: newConversation}])
       return newConversation;
     } catch (error: any) {
-      console.log("Error", error.message);
-      throw new Error(error.message);
+      console.error("Error generating text:", error.message);
+      return `Error: ${error.message}`;
     }
   };
 
-  const animateBotResponse = (fullText: string, prevMessages: any[]) => {
+  const animateAiResponse = (fullText: string, prevMessages: string[]) => {
     let index = 0;
-    // const animationDelay = await fullText?.length < 200 ? 20 : 5;
-    const interval = setInterval(
-      () => {
-        if (index < fullText.length) {
-          setConversations([
+    const textLength = fullText.length;
+    let chunkSize = 3;
+    if (textLength > 6000) chunkSize = 500;
+    else if (textLength > 5000) chunkSize = 15;
+    else if (textLength > 500) chunkSize = 8;
+    else if (textLength > 200) chunkSize = 5;
+
+    const interval = setInterval(() => {
+      if (index < textLength) {
+        setConversations(() => {
+          const updatedConversations = [
             ...prevMessages,
-            { role: "assistant", content: fullText.slice(0, index + 1) },
-          ]);
-          // setChats((prevChats: any) => [...prevChats, { role: "assistant", content: fullText.slice(0, index + 1)}]);
-          index++;
-        } else {
-          clearInterval(interval);
-          scrollToBottom(); // Final scroll when animation completes
-        }
-      },
-      fullText?.length < 200 ? 20 : 5
-    );
+            {
+              role: "assistant",
+              content: fullText.slice(0, index + chunkSize),
+            },
+          ];
+          setChat((prevChat: any) => {
+            const newChat = [...prevChat];
+            newChat[currentIndex] = updatedConversations;
+            return newChat;
+          });
+          return updatedConversations;
+        });
+        index += chunkSize;
+      } else {
+        clearInterval(interval);
+        scrollToBottom();
+      }
+    }, 10);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
@@ -72,168 +95,76 @@ const Home = () => {
       { role: "user", content: input },
     ];
     setConversations(newConversation);
-    scrollToBottom(); // Scroll immediately after user message
-    const grokResponse = await generateText(input);
+    scrollToBottom();
     setInput("");
-    animateBotResponse(grokResponse, newConversation);
-    setLoading(false);
-    setChat((prevChats: any) => {
-      const newChat = [...prevChats];
-      newChat[currentIndex] = newConversation;
-      return newChat;
-    } );
-  };
+    setConversations((prev: any) => [
+      ...prev,
+      { role: "assistant", content: "Thinking..." },
+    ]);
+    try {
+      const aiResponse = await generateText(input);
+      animateAiResponse(aiResponse, newConversation);
+    } catch (error) {
+      setConversations((prev: any) => [
+        ...prev.slice(0, -1),
+        { role: "assistant", content: `Error: ${error}` },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, [input, conversations]);
 
-  // Scroll to bottom whenever conversations update
   useEffect(() => {
     scrollToBottom();
   }, [conversations]);
 
-  // console.log("conversations", conversations);
-  console.log("chats", chat); 
+ 
+
 
   return (
-    <div className="w-full h-screen p-4 flex flex-col justify-center items-center bg-gray-700">
-      <div className="w-full max-w-3xl mx-auto p-4 rounded-lg shadow-lg bg-gray-800">
-        {/* Welcome message styled like Grok */}
-        {!conversations.length && (
-          <h1 className="text-2xl text-white text-center">
-            How can I help you today?
-          </h1>
-        )}
-
-        {/* Chat Messages */}
-        {conversations.length > 0 && (
-          <div
-            ref={chatContainerRef}
-            className="w-full h-[400px] overflow-y-auto p-2 space-y-3"
-          >
-            {loading && "Thinking..." }
-            {conversations?.map((conversation: any, index: number) => (
-              <div
-                key={index}
-                className={`flex ${
-                  conversation.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`px-4 py-2 text-white max-w-[75%] inline-block rounded-xl ${
-                    conversation.role === "user"
-                      ? "bg-gray-900 text-right"
-                      : "text-left"
-                  }`}
-                >
-                  {conversation.content
-                    .split("\n")
-                    .map((line: string, ind: number) => {
-                      const trimmedLine = line.trim();
-
-                      // if (trimmedLine.startsWith("```")) {
-                      //   return (
-                      //     <pre key={ind} className="bg-black p-2 rounded-md overflow-auto">
-                      //     <code>{line.replace(/```/g, "")}</code>
-                      //   </pre>
-                      //   )
-                      // } else {
-                      //   return (
-
-                      //     <p  className="whitespace-pre-wrap">{line.trim()}</p>  
-                      //   )
-
-                      // }
-                     
-
-                      // Identify headings (e.g., "High-level:", "Versatile:", etc.)
-                      if (/^[A-Za-z\s\-]+\:\s*$/.test(trimmedLine)) {
-                        return (
-                          <p key={ind} className="mt-3">
-                            {trimmedLine.replace(":", "")}
-                          </p>
-                        );
-                      }
-
-                      // Convert **Bolded Headers** into just headers
-                      if (/^\*\*(.+?)\*\*/.test(trimmedLine)) {
-                        return (
-                          <h2 key={ind} className="font-bold mt-3 text-lg">
-                            {trimmedLine.replace(/\*\*(.+?)\*\*/, "$1")}
-                          </h2>
-                        );
-                      }
-
-                      // Convert bullet points (*, -, or •) into list items
-                      if (/^\s*[-•*]\s+/.test(trimmedLine)) {
-                        return (
-                          <ul key={ind} className="list-disc pl-5">
-                            <li>{trimmedLine.replace(/^\s*[-•*]\s+/, "")}</li>
-                          </ul>
-                        );
-                      }
-
-                      // Convert numbered lists (1., 2., etc.)
-                      if (/^\s*\d+\.\s+/.test(trimmedLine)) {
-                        return (
-                          <ol key={ind} className="list-decimal pl-5">
-                            <li>{trimmedLine.replace(/^\s*\d+\.\s+/, "")}</li>
-                          </ol>
-                        );
-                      }
-
-                      if (/\*\*/g.test(trimmedLine)) {
-                        return (
-                          <p key={ind} className="mt-3">
-                            {trimmedLine.replace(/\*\*/g, "")}
-                          </p>
-                        );
-                      }
-
-                      // Default case: Normal paragraph
-                      return (
-                        <p key={ind} className="whitespace-pre-wrap">
-                          {trimmedLine}
-                        </p>
-                      );
-                    })}
-                </div>
-              </div>
-            ))}
-            <div ref={chatEndRef} /> {/* Empty div for scroll target */}
-          </div>
-        )}
-
-        {/* Input Field */}
-        <form
-          onSubmit={handleSubmit}
-          className="flex w-full p-2 bg-gray-950 rounded-lg mt-4"
+    <div
+      className={`w-full h-screen max-h-screen items-center bg-gray-700 ${
+        !conversations.length && "justify-center"
+      }`}
+    >
+      <Navbar />
+      <div
+        className={`w-full h-[calc(100vh-60px)] flex flex-col items-center ${
+          !conversations.length && "justify-center"
+        }`}
+      >
+        <div
+          className={`w-full flex justify-center ${
+            conversations.length && "h-[75vh]"
+          } mx-auto`}
         >
-          <textarea
-            disabled={loading}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = "40px"; // Reset height
-              target.style.height = `${Math.min(target.scrollHeight, 300)}px`; // Adjust height dynamically
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e as any); // Prevent default behavior and submit
-              }
-            }}
-            className="w-full p-2 text-white bg-transparent outline-none placeholder-gray-400 resize-none overflow-y-auto min-h-[40px] max-h-[300px]"
-            placeholder="Ask anything... (Shift + Enter for new line)"
-          />
-          <div className="flex items-end">
-          <button
-            type="submit"
-            className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
-            disabled={loading}
-          >
-            {loading ? "Thinking..." : "Send"}
-          </button>
-          </div>
-        </form>
+          {!conversations.length && (
+            <h1 className="text-2xl text-white text-center mb-4">
+              How can I help you today?
+            </h1>
+          )}
+          {conversations.length > 0 && (
+            <div
+              ref={chatContainerRef}
+              className="w-full max-w-3xl h-[75vh] overflow-y-auto p-2 space-y-3"
+            >
+              {conversations?.map((conversation: ConversationTypes, index: number) => (
+                <Canvas 
+                  key={index}
+                  conversation={conversation}
+                />
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+          )}
+        </div>
+        <QueryField 
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          loading={loading}
+          conversations={conversations}
+        />
       </div>
     </div>
   );
