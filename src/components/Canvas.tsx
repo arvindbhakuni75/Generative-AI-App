@@ -1,13 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { useChat } from "@/context/ChatContext";
+import React, { useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
-import Navbar from "./Navbar";
 
 export interface ConversationTypes {
   role: string;

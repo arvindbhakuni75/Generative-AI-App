@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { IoIosAddCircle } from "react-icons/io";
 import { CgSearchLoading } from "react-icons/cg";
 import { TbLayoutSidebarLeftCollapseFilled as SidebarCloseIcon } from "react-icons/tb";
@@ -70,12 +70,6 @@ const Sidebar = () => {
           ))}
         </div>
       </div>
-      {/* <button
-        onClick={toggleSidebar}
-        className="absolute top-5 left-[220px] bg-gray-800 p-2 rounded-full text-gray-400 hover:bg-gray-700 transition duration-300 ease-in-out"
-      >
-        {isOpen ? <SidebarCloseIcon size="30px" /> : <SidebarOpenIcon size="30px" />}
-      </button> */}
     </div>
   );
 };
