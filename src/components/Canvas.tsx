@@ -13,22 +13,21 @@ export interface ConversationTypes {
 
 interface CanvasProps {
   conversation: ConversationTypes;
-};
+}
 
-const Canvas = ({conversation}: CanvasProps) => {
-
-   const handleCopyCode = (code: string, buttonRef: any) => {
-      navigator.clipboard.writeText(code).then(() => {
-        if (buttonRef.current) {
-          buttonRef.current.textContent = "Copied!";
-          setTimeout(() => {
-            if (buttonRef.current) {
-              buttonRef.current.textContent = "Copy";
-            }
-          }, 1500); // Revert after 1.5 seconds
-        }
-      });
-    };
+const Canvas = ({ conversation }: CanvasProps) => {
+  const handleCopyCode = (code: string, buttonRef: any) => {
+    navigator.clipboard.writeText(code).then(() => {
+      if (buttonRef.current) {
+        buttonRef.current.textContent = "Copied!";
+        setTimeout(() => {
+          if (buttonRef.current) {
+            buttonRef.current.textContent = "Copy";
+          }
+        }, 1500); // Revert after 1.5 seconds
+      }
+    });
+  };
 
   return (
     <div

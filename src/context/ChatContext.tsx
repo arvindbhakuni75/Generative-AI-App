@@ -35,7 +35,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   const handleAddNewChat = () => {
-    if(!conversations.length) return;
+    if (!conversations.length) return;
     setChat((prev: any) => [[], ...prev]);
     setCurrentIndex(0);
     setConversations([]);
@@ -47,7 +47,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       value={{
         chat,
         setChat,
-        input, 
+        input,
         setInput,
         currentIndex,
         setCurrentIndex,

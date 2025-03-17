@@ -1,6 +1,3 @@
-"use client";
-import { useEffect, useState } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import Sidebar from "@/components/Sidebar";
 import HomeComponent from "@/components/Home";
 

@@ -80,40 +80,40 @@ const Home = () => {
     }, 10);
   };
 
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setLoading(true);
-    const newConversation = [
-      ...conversations,
-      { role: "user", content: input },
-    ];
-    setConversations(newConversation);
-    scrollToBottom();
-    setInput("");
-    setConversations((prev: any) => [
-      ...prev,
-      { role: "assistant", content: "Thinking..." },
-    ]);
-    try {
-      const aiResponse = await generateText(input);
-      animateAiResponse(aiResponse, newConversation);
-    } catch (error) {
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!input.trim()) return;
+      setLoading(true);
+      const newConversation = [
+        ...conversations,
+        { role: "user", content: input },
+      ];
+      setConversations(newConversation);
+      scrollToBottom();
+      setInput("");
       setConversations((prev: any) => [
-        ...prev.slice(0, -1),
-        { role: "assistant", content: `Error: ${error}` },
+        ...prev,
+        { role: "assistant", content: "Thinking..." },
       ]);
-    } finally {
-      setLoading(false);
-    }
-  }, [input, conversations]);
+      try {
+        const aiResponse = await generateText(input);
+        animateAiResponse(aiResponse, newConversation);
+      } catch (error) {
+        setConversations((prev: any) => [
+          ...prev.slice(0, -1),
+          { role: "assistant", content: `Error: ${error}` },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [input]
+  );
 
   useEffect(() => {
     scrollToBottom();
   }, [conversations]);
-
- 
-
 
   return (
     <div
@@ -142,17 +142,16 @@ const Home = () => {
               ref={chatContainerRef}
               className="w-full max-w-3xl h-[75vh] overflow-y-auto p-2 space-y-3"
             >
-              {conversations?.map((conversation: ConversationTypes, index: number) => (
-                <Canvas 
-                  key={index}
-                  conversation={conversation}
-                />
-              ))}
+              {conversations?.map(
+                (conversation: ConversationTypes, index: number) => (
+                  <Canvas key={index} conversation={conversation} />
+                )
+              )}
               <div ref={chatEndRef} />
             </div>
           )}
         </div>
-        <QueryField 
+        <QueryField
           input={input}
           setInput={setInput}
           handleSubmit={handleSubmit}
