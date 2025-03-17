@@ -2,7 +2,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### 1. Set Up Your Environment Variables
+
+Please generate your own **Google Gemini free API Key** and create a `.env` file in the root directory:
 
 ```bash
 npm run dev
