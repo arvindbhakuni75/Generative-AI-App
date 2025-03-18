@@ -25,11 +25,12 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | null>(null);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [chat, setChat] = useState<any[]>([]);
+  const storedChat = JSON.parse(localStorage.getItem('chat') || "[]");
+  const [chat, setChat] = useState<any[]>( storedChat || []);
   const [input, setInput] = useState<string>("");
-  const [currentIndex, setCurrentIndex] = useState<number>(chat?.length);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [conversations, setConversations] = useState<any>(
-    chat[currentIndex] || []
+    storedChat.length ? storedChat[0] : []
   );
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
